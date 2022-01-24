@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'org.springframework.boot' version '2.5.2'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+}
+
+group 'com.forthreal'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.22'
+
+    implementation 'org.springframework.boot:spring-boot-starter-integration:2.6.2'
+    implementation 'org.springframework.integration:spring-integration-xml:5.5.8'
+    implementation('org.springframework.integration:spring-integration-kafka:5.5.8') {
+        exclude(module: 'spring-kafka')
+    }
+    implementation 'org.springframework.kafka:spring-kafka:2.8.2'
+    implementation 'org.springframework.integration:spring-integration-stream:5.5.8'
+    implementation 'org.springframework.integration:spring-integration-file:5.5.8'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
+}
+
+test {
+    useJUnitPlatform()
+}

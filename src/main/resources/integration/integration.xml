@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:int-stream="http://www.springframework.org/schema/integration/stream"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:int-file="http://www.springframework.org/schema/integration/file"
+       xmlns:int-xml="http://www.springframework.org/schema/integration/xml"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:int-kafka="http://www.springframework.org/schema/integration/kafka"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration.xsd
+    http://www.springframework.org/schema/integration/stream http://www.springframework.org/schema/integration/stream/spring-integration-stream.xsd
+    http://www.springframework.org/schema/integration/xml http://www.springframework.org/schema/integration/xml/spring-integration-xml.xsd
+    http://www.springframework.org/schema/integration/file http://www.springframework.org/schema/integration/file/spring-integration-file.xsd
+    http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+    http://www.springframework.org/schema/integration/kafka http://www.springframework.org/schema/integration/kafka/spring-integration-kafka.xsd
+    http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
+
+    <int-kafka:message-driven-channel-adapter
+            id="kafkaInputRuleListener"
+            listener-container="kafkaInputRuleListenerContainer"
+            channel="ruleInputChannel"
+            mode="record"/>
+
+    <int:channel id="ruleInputChannel">
+        <int:queue/>
+    </int:channel>
+
+    <int:service-activator id="ruleInputChannelReader" input-channel="ruleInputChannel" ref="ruleActivationService" method="ruleActivationInputMessage">
+        <int:poller task-executor="ruleInputChannelReaderExecutor" fixed-rate="1000"/>
+    </int:service-activator>
+
+    <bean id="ruleActivationService" class="com.forthreal.RuleActivationService"/>
+    <bean id="ruleInputChannelReaderExecutor" class="com.forthreal.RuleActivationInputChannelExecutor"/>
+
+    <bean id="kafkaInputRuleListenerContainer" class="org.springframework.kafka.listener.KafkaMessageListenerContainer">
+        <constructor-arg>
+            <bean class="org.springframework.kafka.core.DefaultKafkaConsumerFactory">
+                <constructor-arg>
+                    <map>
+                        <entry key="bootstrap.servers" value="192.168.31.52:9092"/>
+                        <entry key="group.id" value="0"/>
+                        <entry key="key.deserializer" value="org.apache.kafka.common.serialization.IntegerDeserializer"/>
+                        <entry key="value.deserializer" value="org.apache.kafka.common.serialization.IntegerDeserializer"/>
+                    </map>
+                </constructor-arg>
+            </bean>
+        </constructor-arg>
+        <constructor-arg>
+            <bean class="org.springframework.kafka.listener.ContainerProperties">
+                <constructor-arg name="topics" value="rule"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+</beans>
