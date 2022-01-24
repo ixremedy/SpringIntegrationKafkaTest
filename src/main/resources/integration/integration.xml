@@ -15,6 +15,10 @@
     <int:channel id="ruleInputChannel"><int:queue/></int:channel>
     <!-- manual rule activations -->
     <int:channel id="manualRuleInputChannel"><int:queue/></int:channel>
+    <!-- successfully processed messages -->
+    <int:channel id="processedRulesChannel"><int:queue/></int:channel>
+    <!-- messages that caused an error -->
+    <int:channel id="processingErrorChannel"><int:queue/></int:channel>
 
     <int:service-activator id="ruleInputChannelReader" input-channel="ruleInputChannel" ref="ruleActivationService" method="ruleActivationInputMessage">
         <int:poller task-executor="ruleInputChannelReaderExecutor" fixed-rate="1000"/>
