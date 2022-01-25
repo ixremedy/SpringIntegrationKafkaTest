@@ -18,8 +18,7 @@ public class TestRuleProcessing {
     @DisplayName("check if we can submit a kafka message")
     public void sendSimpleMessageTest()
     {
-        var result = sampleProducer.sendMessageSimple("rule","type", "test");
-
-        assertTrue(result);
+        assertTrue(sampleProducer.sendMessageSimple("rule","type", "{\"testType\": \"normalState\"}"));
+        assertTrue(sampleProducer.sendMessageSimple("rule","type", "{\"testType\": \"wrongState\"}"));
     }
 }

@@ -6,7 +6,6 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 import static java.lang.Thread.currentThread;
 
 @Service
@@ -21,7 +20,7 @@ public class RuleActivationInputChannelExecutor implements TaskExecutor
 
     @Override
     public void execute(Runnable task) {
-        logger.info("{} Executing task", currentThread().getStackTrace()[1].getMethodName());
+        //logger.info("{} Executing task", currentThread().getStackTrace()[1].getMethodName());
         executorService.execute(task);
     }
 }

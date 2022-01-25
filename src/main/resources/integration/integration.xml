@@ -8,29 +8,44 @@
     http://www.springframework.org/schema/integration/kafka http://www.springframework.org/schema/integration/kafka/spring-integration-kafka.xsd">
 
     <!-- INPUT GROUP -->
-    <int-kafka:message-driven-channel-adapter id="kafkaInputRuleListener" listener-container="kafkaInputRuleListenerContainer" channel="ruleInputChannel" mode="record"/>
-    <int-kafka:message-driven-channel-adapter id="kafkaManualInputRuleListener" listener-container="kafkaManualInputRuleListenerContainer" channel="manualRuleInputChannel" mode="record"/>
+    <int-kafka:message-driven-channel-adapter id="kafkaInputRuleListener" listener-container="kafkaInputRuleListenerContainer" channel="ruleInputChannel" error-channel="internalErrorChannel" mode="record"/>
+    <int-kafka:message-driven-channel-adapter id="kafkaManualInputRuleListener" listener-container="kafkaManualInputRuleListenerContainer" channel="manualRuleInputChannel" error-channel="internalErrorChannel" mode="record"/>
+
+    <!-- OUTPUT GROUP -->
+    <int-kafka:outbound-channel-adapter id="kafkaProcessedRulePublisher" kafka-template="kafkaProducerTemplate" topic="processedRuleActivations" channel="processedRulesChannel"/>
+    <int-kafka:outbound-channel-adapter id="kafkaProcessingErrorsPublisher" kafka-template="kafkaProducerTemplate" topic="ruleError" channel="errorChannel"/>
+
+    <!-- INTERNAL ERROR PROCESSING -->
+    <int:channel id="internalErrorChannel"><int:queue/></int:channel>
 
     <!-- automated rule activations -->
-    <int:channel id="ruleInputChannel"><int:queue/></int:channel>
+    <int:publish-subscribe-channel id="ruleInputChannel"/>
     <!-- manual rule activations -->
-    <int:channel id="manualRuleInputChannel"><int:queue/></int:channel>
+    <int:publish-subscribe-channel id="manualRuleInputChannel"/>
     <!-- successfully processed messages -->
-    <int:channel id="processedRulesChannel"><int:queue/></int:channel>
+    <int:publish-subscribe-channel id="processedRulesChannel"/>
     <!-- messages that caused an error -->
-    <int:channel id="processingErrorChannel"><int:queue/></int:channel>
+    <int:publish-subscribe-channel id="processingErrorChannel"/>
 
-    <int:service-activator id="ruleInputChannelReader" input-channel="ruleInputChannel" ref="ruleActivationService" method="ruleActivationInputMessage">
-        <int:poller task-executor="ruleInputChannelReaderExecutor" fixed-rate="1000"/>
+    <int:service-activator id="ruleInputChannelReader" input-channel="ruleInputChannel" ref="ruleActivationService" output-channel="processedRulesChannel" method="ruleActivationInputMessage"/>
+    <int:service-activator id="manualRuleInputChannelReader" input-channel="manualRuleInputChannel" output-channel="processedRulesChannel" ref="ruleActivationService" method="ruleActivationInputMessage"/>
+
+    <!-- error related service activator -->
+    <int:service-activator id="ruleErrorChannelPublisher" input-channel="internalErrorChannel" output-channel="errorChannel" ref="ruleErrorHandlingService" method="ruleActivationErrorMessage">
+        <int:poller fixed-rate="1000"/>
     </int:service-activator>
 
-    <int:service-activator id="manualRuleInputChannelReader" input-channel="manualRuleInputChannel" ref="ruleActivationService" method="ruleActivationInputMessage">
-        <int:poller task-executor="ruleInputChannelReaderExecutor" fixed-rate="1000"/>
-    </int:service-activator>
+    <!--
+    <int:exception-type-router input-channel="ruleInputChannel" default-output-channel="errorChannel">
+        <int:mapping exception-type="com.forthreal.AppException" channel="errorChannel"/>
+    </int:exception-type-router>
+    -->
 
     <!-- use the same executor service to start both service activator pollers -->
     <bean id="ruleActivationService" class="com.forthreal.RuleActivationService"/>
     <bean id="ruleInputChannelReaderExecutor" class="com.forthreal.RuleActivationInputChannelExecutor"/>
+    <!-- define the error processing class -->
+    <bean id="ruleErrorHandlingService" class="com.forthreal.RuleErrorService"/>
 
     <!-- input rule passed automatically - Kafka listener -->
     <bean id="kafkaInputRuleListenerContainer" class="org.springframework.kafka.listener.KafkaMessageListenerContainer">
@@ -40,8 +55,8 @@
                     <map>
                         <entry key="bootstrap.servers" value="192.168.31.52:9092"/>
                         <entry key="group.id" value="0"/>
-                        <entry key="key.deserializer" value="org.apache.kafka.common.serialization.IntegerDeserializer"/>
-                        <entry key="value.deserializer" value="org.apache.kafka.common.serialization.IntegerDeserializer"/>
+                        <entry key="key.deserializer" value="org.apache.kafka.common.serialization.StringDeserializer"/>
+                        <entry key="value.deserializer" value="org.apache.kafka.common.serialization.StringDeserializer"/>
                     </map>
                 </constructor-arg>
             </bean>
@@ -60,9 +75,9 @@
                 <constructor-arg>
                     <map>
                         <entry key="bootstrap.servers" value="192.168.31.52:9092"/>
-                        <entry key="group.id" value="0"/>
-                        <entry key="key.deserializer" value="org.apache.kafka.common.serialization.IntegerDeserializer"/>
-                        <entry key="value.deserializer" value="org.apache.kafka.common.serialization.IntegerDeserializer"/>
+                        <entry key="group.id" value="1"/>
+                        <entry key="key.deserializer" value="org.apache.kafka.common.serialization.StringDeserializer"/>
+                        <entry key="value.deserializer" value="org.apache.kafka.common.serialization.StringDeserializer"/>
                     </map>
                 </constructor-arg>
             </bean>
@@ -73,5 +88,21 @@
             </bean>
         </constructor-arg>
     </bean>
+
+    <!-- processed rules & errors - template -->
+    <bean id="kafkaProducerTemplate" class="org.springframework.kafka.core.KafkaTemplate">
+        <constructor-arg>
+            <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
+                <constructor-arg>
+                    <map>
+                        <entry key="bootstrap.servers" value="192.168.31.52:9092"/>
+                        <entry key="key.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
+                        <entry key="value.serializer" value="org.apache.kafka.common.serialization.StringSerializer"/>
+                    </map>
+                </constructor-arg>
+            </bean>
+        </constructor-arg>
+    </bean>
+
 
 </beans>
