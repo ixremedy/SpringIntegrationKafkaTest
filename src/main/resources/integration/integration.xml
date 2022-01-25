@@ -27,6 +27,7 @@
     <!-- messages that caused an error -->
     <int:publish-subscribe-channel id="processingErrorChannel"/>
 
+    <!-- two service activators for automatic and manual queues -->
     <int:service-activator id="ruleInputChannelReader" input-channel="ruleInputChannel" ref="ruleActivationService" output-channel="processedRulesChannel" method="ruleActivationInputMessage"/>
     <int:service-activator id="manualRuleInputChannelReader" input-channel="manualRuleInputChannel" output-channel="processedRulesChannel" ref="ruleActivationService" method="ruleActivationInputMessage"/>
 
@@ -43,9 +44,11 @@
 
     <!-- use the same executor service to start both service activator pollers -->
     <bean id="ruleActivationService" class="com.forthreal.RuleActivationService"/>
-    <bean id="ruleInputChannelReaderExecutor" class="com.forthreal.RuleActivationInputChannelExecutor"/>
     <!-- define the error processing class -->
     <bean id="ruleErrorHandlingService" class="com.forthreal.RuleErrorService"/>
+
+    <!-- executor service thread pool -->
+    <bean id="ruleInputChannelReaderExecutor" class="com.forthreal.RuleActivationInputChannelExecutor"/>
 
     <!-- input rule passed automatically - Kafka listener -->
     <bean id="kafkaInputRuleListenerContainer" class="org.springframework.kafka.listener.KafkaMessageListenerContainer">
@@ -89,7 +92,7 @@
         </constructor-arg>
     </bean>
 
-    <!-- processed rules & errors - template -->
+    <!-- processed rules & errors - publisher Kafka template -->
     <bean id="kafkaProducerTemplate" class="org.springframework.kafka.core.KafkaTemplate">
         <constructor-arg>
             <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
