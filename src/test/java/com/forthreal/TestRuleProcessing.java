@@ -15,10 +15,18 @@ public class TestRuleProcessing {
 
     @Test
     @Order(0)
-    @DisplayName("check if we can submit a kafka message")
-    public void sendSimpleMessageTest()
+    @DisplayName("check if we can submit a kafka message - not failing data")
+    public void sendSimplePositiveMessageTest()
     {
         assertTrue(sampleProducer.sendMessageSimple("rule","type", "{\"testType\": \"normalState\"}"));
+    }
+
+    @Test
+    @Order(1)
+    @DisplayName("check if we can submit a kafka message - failing data")
+    public void sendSimpleNegativeMessageTest()
+    {
         assertTrue(sampleProducer.sendMessageSimple("rule","type", "{\"testType\": \"wrongState\"}"));
     }
+
 }
