@@ -3,7 +3,6 @@ package com.forthreal;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
-
 import static java.lang.Thread.currentThread;
 
 @Service
